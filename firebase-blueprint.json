@@ -1,0 +1,87 @@
+{
+  "entities": {
+    "Record": {
+      "title": "Academic Record",
+      "description": "Represents an academic class record for tracking teacher progress",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the record"
+        },
+        "grado": {
+          "type": "string",
+          "enum": ["6", "7", "11"],
+          "description": "The grade level of the class"
+        },
+        "asig": {
+          "type": "string",
+          "enum": ["Español", "Sociales", "Filosofía"],
+          "description": "The course subject"
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date",
+          "description": "The date when the class was taught"
+        },
+        "periodo": {
+          "type": "string",
+          "enum": ["1", "2", "3", "4"],
+          "description": "School period"
+        },
+        "tema": {
+          "type": "string",
+          "description": "Concept or topic covered"
+        },
+        "actividades": {
+          "type": "string",
+          "description": "Activities carried out in class"
+        },
+        "tareas": {
+          "type": "string",
+          "description": "Assigned homework or obligations"
+        },
+        "logros": {
+          "type": "string",
+          "description": "Observed achievements of the students"
+        },
+        "dificultades": {
+          "type": "string",
+          "description": "Observed difficulties of the students"
+        },
+        "observaciones": {
+          "type": "string",
+          "description": "Additional class observations"
+        },
+        "estado": {
+          "type": "string",
+          "enum": ["Excelente", "Bueno", "En proceso", "Requiere apoyo"],
+          "description": "Overall status in class development"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the teacher who registered the class"
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "The email of the teacher who registered the class"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The creation timestamp in ISO format"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "The update timestamp in ISO format"
+        }
+      },
+      "required": ["id", "grado", "asig", "fecha", "periodo", "tema", "estado", "userId"]
+    }
+  },
+  "firestore": {
+    "records/{recordId}": {
+      "schema": "Record",
+      "description": "Academic progress registers"
+    }
+  }
+}

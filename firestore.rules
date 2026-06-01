@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global safety net (Default Deny all)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable, hardened global security helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Unified record validation helper (Zero-Gap architecture)
+    function isValidRecord(data) {
+      return data.keys().hasAll(['id', 'grado', 'asig', 'fecha', 'periodo', 'tema', 'estado', 'userId', 'userEmail', 'createdAt', 'updatedAt'])
+        && data.keys().size() <= 14
+        && data.id is string && isValidId(data.id)
+        && data.grado is string && (data.grado == '6' || data.grado == '7' || data.grado == '11')
+        && data.asig is string && (data.asig == 'Español' || data.asig == 'Sociales' || data.asig == 'Filosofía')
+        && data.fecha is string && data.fecha.size() <= 30
+        && data.periodo is string && (data.periodo == '1' || data.periodo == '2' || data.periodo == '3' || data.periodo == '4')
+        && data.tema is string && data.tema.size() <= 300
+        && data.estado is string && (data.estado == 'Excelente' || data.estado == 'Bueno' || data.estado == 'En proceso' || data.estado == 'Requiere apoyo')
+        && data.userId is string && data.userId == request.auth.uid
+        && data.userEmail is string && data.userEmail.size() <= 120
+        && data.createdAt is string && data.createdAt.size() <= 50
+        && data.updatedAt is string && data.updatedAt.size() <= 50
+        && (data.get('actividades', '') is string && data.get('actividades', '').size() <= 3000)
+        && (data.get('tareas', '') is string && data.get('tareas', '').size() <= 3000)
+        && (data.get('logros', '') is string && data.get('logros', '').size() <= 3000)
+        && (data.get('dificultades', '') is string && data.get('dificultades', '').size() <= 3000)
+        && (data.get('observaciones', '') is string && data.get('observaciones', '').size() <= 3000);
+    }
+
+    // Rules matching the records collection
+    match /records/{recordId} {
+      
+      // Query Enforcer: authenticated & verified teachers can view academic progress
+      allow read: if isEmailVerified();
+
+      // Create: user is authenticated, has verified email, document ID matches, and payload is valid
+      allow create: if isEmailVerified()
+        && isValidId(recordId)
+        && recordId == incoming().id
+        && isValidRecord(incoming());
+
+      // Update: user is verified, is ownership holder, and update respects structural & identity immutability
+      allow update: if isEmailVerified()
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && isValidRecord(incoming())
+        && (
+          // Action list is open as they can edit any of the primary academic attributes
+          incoming().diff(existing()).affectedKeys().hasAny(['grado', 'asig', 'fecha', 'periodo', 'tema', 'actividades', 'tareas', 'logros', 'dificultades', 'observaciones', 'estado', 'updatedAt'])
+        );
+
+      // Delete: only verified owner of the class register can delete it
+      allow delete: if isEmailVerified()
+        && existing().userId == request.auth.uid;
+    }
+  }
+}

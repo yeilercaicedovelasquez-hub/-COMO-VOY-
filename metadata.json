@@ -1,0 +1,6 @@
+{
+  "name": "¿Cómo Voy?",
+  "description": "Sistema de bitácora y seguimiento de avances académicos para la Institución Educativa Patio Bonito",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
